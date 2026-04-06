@@ -40,12 +40,10 @@ apt-get full-upgrade -y >> "$LOG_FILE" 2>&1
 status_success "System Patched"
 
 # 2. Performance: ZRam & Swap
-status_working "Configuring ZRam (Compressed RAM Swap) & Swappiness"
+status_working "Configuring ZRam (Compressed RAM Swap)"
 apt-get install -y zram-tools >> "$LOG_FILE" 2>&1
-echo "ALGO=zstd" >> /etc/default/zramswap
-echo "PERCENT=60" >> /etc/default/zramswap
+echo -e "ALGO=zstd\nPERCENT=60" > /etc/default/zramswap
 systemctl restart zramswap >> "$LOG_FILE" 2>&1
-# Traditional 1GB backup swap
 fallocate -l 1G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
 echo '/swapfile none swap sw 0 0' >> /etc/fstab
 status_success "Memory Optimized (ZRam + Swap)"
@@ -75,69 +73,115 @@ EOT
 systemctl restart ssh >> "$LOG_FILE" 2>&1
 status_success "SSH Hardened on Port $SSH_PORT"
 
-# 4. Firewall & UFW-Docker Fix
-status_working "Setting up UFW & Docker Security Bridge"
+# 4. Firewall (UFW)
+status_working "Setting up Firewall & ICMP Drop"
 apt-get install -y ufw >> "$LOG_FILE" 2>&1
-# The Fix: Ensure Docker doesn't bypass UFW
-mkdir -p /etc/ufw
-# Basic UFW setup
+BEFORE_RULES="/etc/ufw/before.rules"
+# Apply ICMP Drop (Screenshot Logic)
+sed -i 's/icmp-type destination-unreachable -j ACCEPT/icmp-type destination-unreachable -j DROP/' $BEFORE_RULES
+sed -i 's/icmp-type echo-request -j ACCEPT/icmp-type echo-request -j DROP/' $BEFORE_RULES
+sed -i 's/icmp-type time-exceeded -j ACCEPT/icmp-type time-exceeded -j DROP/' $BEFORE_RULES
+sed -i 's/icmp-type parameter-problem -j ACCEPT/icmp-type parameter-problem -j DROP/' $BEFORE_RULES
+sed -i 's/icmp-type source-quench -j ACCEPT/icmp-type source-quench -j DROP/' $BEFORE_RULES
+
 ufw default deny incoming >> "$LOG_FILE" 2>&1
 ufw limit $SSH_PORT/tcp >> "$LOG_FILE" 2>&1
 ufw allow 60000:61000/udp >> "$LOG_FILE" 2>&1 # Mosh
 ufw --force enable >> "$LOG_FILE" 2>&1
-status_success "Firewall Active (Docker Bridge Secured)"
+status_success "Firewall Active (Stealth Mode)"
 
-# 5. Sysctl Master Optimization
-status_working "Applying Pro Sysctl Tweaks"
+# 5. THE MASTER SYSCTL (Categorized & Refined)
+status_working "Applying Titan-Level Sysctl Optimizations"
 cat <<EOT > /etc/sysctl.conf
+# --- Network Core (BBR + Speed) ---
 net.core.default_qdisc = fq
 net.ipv4.tcp_congestion_control = bbr
+net.ipv4.tcp_fastopen = 3
+net.ipv4.tcp_slow_start_after_idle = 0
+net.ipv4.tcp_mtu_probing = 1
+
+# --- Network Memory (High Bandwidth/VPN) ---
+net.core.rmem_max = 16777216
+net.core.wmem_max = 16777216
+net.ipv4.tcp_rmem = 4096 87380 16777216
+net.ipv4.tcp_wmem = 4096 65536 16777216
+net.core.netdev_max_backlog = 16384
+net.core.somaxconn = 8192
+net.ipv4.tcp_max_syn_backlog = 8192
+
+# --- Virtual Memory (Stability & ZRam Optimization) ---
+vm.swappiness = 180
+vm.vfs_cache_pressure = 50
+vm.dirty_ratio = 10
+vm.dirty_background_ratio = 5
+
+# --- Security & Anti-Exploit ---
+kernel.panic = 10
+kernel.panic_on_oops = 1
+kernel.kptr_restrict = 2
+kernel.dmesg_restrict = 1
+kernel.perf_event_paranoid = 3
+kernel.unprivileged_bpf_disabled = 1
+kernel.yama.ptrace_scope = 1
+net.ipv4.conf.all.rp_filter = 1
+net.ipv4.conf.all.log_martians = 1
+net.ipv4.conf.all.accept_redirects = 0
+net.ipv4.conf.all.send_redirects = 0
+net.ipv4.icmp_echo_ignore_all = 1
+
+# --- IPv6 Hardening (Kept for AmneziaWG) ---
+net.ipv6.conf.all.accept_ra = 0
+net.ipv6.conf.default.accept_ra = 0
+net.ipv6.conf.all.accept_redirects = 0
+net.ipv6.conf.default.accept_redirects = 0
+
+# --- AmneziaWG & Docker Specifics ---
 net.ipv4.ip_forward = 1
 net.ipv4.conf.all.src_valid_mark = 1
-kernel.panic = 10
-kernel.kptr_restrict = 2
-net.ipv4.tcp_tw_reuse = 1
-net.ipv4.tcp_mtu_probing = 1
 net.netfilter.nf_conntrack_max = 262144
-vm.swappiness = 10
-vm.vfs_cache_pressure = 50
+fs.file-max = 1000000
+fs.inotify.max_user_watches = 524288
 EOT
 sysctl -p >> "$LOG_FILE" 2>&1
-status_success "Kernel Optimized"
+status_success "Kernel Optimizations Applied"
 
-# 6. Docker & Maintenance
-status_working "Installing Docker & Auto-Maintenance"
+# 6. Docker, Maintenance & Utilities
+status_working "Installing Docker, AmneziaWG & Utils"
 curl -sSL https://get.docker.com | sh >> "$LOG_FILE" 2>&1
 usermod -aG docker "$USER_NAME"
-# Auto-reboot for security updates at 04:00
-apt-get install -y unattended-upgrades >> "$LOG_FILE" 2>&1
-cat <<EOT > /etc/apt/apt.conf.d/50unattended-upgrades
-Unattended-Upgrade::Automatic-Reboot "true";
-Unattended-Upgrade::Automatic-Reboot-Time "04:00";
+# Docker log capping
+cat <<EOT > /etc/docker/daemon.json
+{ "log-driver": "json-file", "log-opts": { "max-size": "10m", "max-file": "3" } }
 EOT
-status_success "Docker & Auto-Patching Ready"
+systemctl restart docker >> "$LOG_FILE" 2>&1
 
-# 7. AmneziaWG
-status_working "Installing AmneziaWG"
+# AmneziaWG
 if [[ "$ID" == "ubuntu" ]]; then
     add-apt-repository -y ppa:amnezia/ppa >> "$LOG_FILE" 2>&1
     apt-get update >> "$LOG_FILE" 2>&1
     apt-get install -y amneziawg amneziawg-tools >> "$LOG_FILE" 2>&1
 elif [[ "$ID" == "debian" ]]; then
-    apt-get install -y dkms "linux-headers-$(uname -r)" >> "$LOG_FILE" 2>&1
-    # Keyring logic as established before
+    apt-get install -y gnupg curl dkms "linux-headers-$(uname -r)" >> "$LOG_FILE" 2>&1
+    mkdir -p /etc/apt/keyrings
+    curl -fsSL "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x75C9DD72C799870E310542E24166F2C257290828" | gpg --dearmor > /etc/apt/keyrings/amneziawg.gpg
+    echo "deb[signed-by=/etc/apt/keyrings/amneziawg.gpg] https://ppa.launchpadcontent.net/amnezia/ppa/ubuntu focal main" > /etc/apt/sources.list.d/amneziawg.list
+    apt-get update >> "$LOG_FILE" 2>&1
+    apt-get install -y amneziawg amneziawg-tools >> "$LOG_FILE" 2>&1
 fi
 modprobe amneziawg >> "$LOG_FILE" 2>&1
-status_success "AmneziaWG Module Loaded"
 
-# 8. UX: Bash Quality of Life
-status_working "Applying Bash UX Improvements"
+# Utilities & Auto-Maintenance
+apt-get install -y fail2ban unattended-upgrades git btop haveged >> "$LOG_FILE" 2>&1
+echo -e "Unattended-Upgrade::Automatic-Reboot \"true\";\nUnattended-Upgrade::Automatic-Reboot-Time \"04:00\";" > /etc/apt/apt.conf.d/50unattended-upgrades
+(crontab -l 2>/dev/null; echo "0 3 * * 0 /usr/bin/docker system prune -af --volumes") | crontab -
+status_success "Docker & AmneziaWG Ready"
+
+# 7. UX: Bash Aliases
 cat <<EOT >> /home/"$USER_NAME"/.bashrc
 alias ll='ls -alF --color=auto'
 alias update='sudo apt update && sudo apt upgrade -y'
 export PS1='${GREEN}\u@\h${NC}:${BLUE}\w${NC}\$ '
 EOT
-status_success "UX Aliases Added"
 
 # Finalization
 ROOT_PASS=$(openssl rand -base64 16)
@@ -149,7 +193,6 @@ print_header "TITAN VPS DEPLOYED"
 echo -e "  SSH Port:      ${BLUE}$SSH_PORT${NC}"
 echo -e "  Admin User:    ${BLUE}$USER_NAME${NC}"
 echo -e "  Root Password: ${BLUE}$ROOT_PASS${NC}"
-echo -e "  Log File:      ${BLUE}$LOG_FILE${NC}"
 echo -e "\n${YELLOW}PRIVATE KEY (Save as vps.key):${NC}\n$PRIVATE_KEY\n"
 echo -e "${RED}REBOOTING IN 5 SECONDS...${NC}"
 sleep 5
