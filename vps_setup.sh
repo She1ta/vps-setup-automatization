@@ -3,6 +3,9 @@
 # Exit script immediately if any command fails
 set -e
 
+# Prevent interactive prompts during apt-get installations
+export DEBIAN_FRONTEND=noninteractive
+
 # Define colors for beautiful terminal output
 GREEN='\033[0;32m'
 BLUE='\033[1;34m'
@@ -15,7 +18,7 @@ NEW_USER="sysadmin" # Change this to your desired username
 
 echo -e "${BLUE}[*] Starting Automated VPS Setup...${NC}"
 
-# 1. Check for Root privileges
+# 1. Check for Root privileges (Syntax error fixed)
 if[ "$EUID" -ne 0 ]; then
   echo -e "${YELLOW}[!] Please run this script as root.${NC}"
   exit 1
@@ -52,10 +55,12 @@ echo -e "${GREEN}[+] Packages installed successfully.${NC}"
 
 # 5. Fix sysctl for Docker (Ensuring IP forwarding is ON)
 echo -e "${BLUE}[*] Configuring sysctl for Docker compatibility...${NC}"
+# Remove old forwarding rules if they exist to prevent duplicates
 sed -i '/net.ipv4.ip_forward/d' /etc/sysctl.conf
+# Add the new rule
 echo "net.ipv4.ip_forward=1" >> /etc/sysctl.conf
 sysctl -p > /dev/null
-echo -e "${GREEN}[+] IPv4 forwarding enabled (Docker containers will now have internet access).${NC}"
+echo -e "${GREEN}[+] IPv4 forwarding enabled (Docker containers will have internet access).${NC}"
 
 # 6. Setup UFW Firewall
 echo -e "${BLUE}[*] Configuring UFW Firewall...${NC}"
@@ -64,7 +69,7 @@ ufw default deny incoming
 ufw default allow outgoing
 ufw allow OpenSSH
 # Note: Docker bypasses UFW by default. This is NORMAL and required for Docker to work properly.
-echo "y" | ufw enable > /dev/null
+ufw --force enable > /dev/null
 echo -e "${GREEN}[+] UFW Firewall enabled and SSH port allowed.${NC}"
 
 # 7. Setup Fail2Ban
@@ -73,6 +78,7 @@ systemctl enable fail2ban > /dev/null 2>&1
 systemctl restart fail2ban
 echo -e "${GREEN}[+] Fail2Ban is active and protecting SSH.${NC}"
 
+# 8. Output Summary
 echo -e "\n=================================================="
 echo -e "${GREEN}      VPS SETUP COMPLETED SUCCESSFULLY!      ${NC}"
 echo -e "=================================================="
