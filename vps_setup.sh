@@ -18,7 +18,7 @@ NEW_USER="sysadmin" # Change this to your desired username
 
 echo -e "${BLUE}[*] Starting Automated VPS Setup...${NC}"
 
-# 1. Check for Root privileges (Syntax error fixed)
+# 1. Check for Root privileges
 if[ "$EUID" -ne 0 ]; then
   echo -e "${YELLOW}[!] Please run this script as root.${NC}"
   exit 1
