@@ -34,7 +34,7 @@ services:
       vpn_net:
         ipv4_address: 10.0.0.200
     environment:
-      - WG_HOST=
+      - WG_HOST= ! ! !
        # Enables AmneziaWG (needs host kernel module)
       - EXPERIMENTAL_AWG=true
       # Required in v15 for HTTP Web UI access
@@ -54,7 +54,7 @@ services:
       - /lib/modules:/lib/modules:ro
     ports:
       - "2948:2948/udp"           # Public VPN port
-      - "56923:56923/tcp" # Web UI bound to localhost for Pangolin
+      - "51821:51821/tcp" # Web UI bound to localhost for Pangolin
     cap_add:
       - NET_ADMIN
       - SYS_MODULE
