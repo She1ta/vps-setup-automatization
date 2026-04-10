@@ -43,7 +43,7 @@ services:
       #
       # ⚠️ VPN Tunnel IPs (Clients get 10.8.0.2, 10.8.0.3, etc.)
       # This MUST be different from the Docker network (10.0.0.x)
-      - WG_DEFAULT_ADDRESS=10.8.0.0/24
+      - WG_DEFAULT_ADDRESS=10.8.0.1/24
       #
       # Point clients to AdGuard's new static IP
       - WG_DEFAULT_DNS=10.0.0.100
