@@ -1,0 +1,73 @@
+  # ADGUARD HOME (DNS & AdBlock)
+  # Internal IP: 10.0.0.100
+services:
+  adguard:
+    image: adguard/adguardhome:latest
+    container_name: adguard_home
+    restart: unless-stopped
+    ports:
+      # Initial setup wizard
+      - "3000:3000/tcp"
+      # Dashboard Web UI (after setup is complete)
+      - "8080:80/tcp"
+    networks:
+      vpn_net:
+        ipv4_address: 10.0.0.100
+    volumes:
+      - ${PWD}/work:/opt/adguardhome/work/
+      - ${PWD}/config:/opt/adguardhome/conf/
+    cap_add:
+      - NET_ADMIN
+    security_opt:
+      - no-new-privileges:true
+  #
+  # WG-EASY (VPN Server)
+  # Internal IP: 10.0.0.200
+  #
+  wg-easy:
+    image: ghcr.io/wg-easy/wg-easy:15
+    container_name: wg-easy
+    restart: unless-stopped
+    depends_on:
+      - adguard
+    networks:
+      vpn_net:
+        ipv4_address: 10.0.0.200
+    environment:
+      - WG_HOST=
+       # Enables AmneziaWG (needs host kernel module)
+      - EXPERIMENTAL_AWG=true
+      # Required in v15 for HTTP Web UI access
+      - INSECURE=true
+      # WG_HOST, WG_PORT, and WG_DEFAULT_DNS are configured in the browser on first launch!
+      
+      # ⚠️ VPN Tunnel IPs (Clients get 10.8.0.2, 10.8.0.3, etc.)
+      # This MUST be different from the Docker network (10.0.0.x)
+      - WG_DEFAULT_ADDRESS=10.8.0.x
+      
+      # Point clients to AdGuard's new static IP
+      - WG_DEFAULT_DNS=10.0.0.100
+      #
+      - WG_ALLOWED_IPS=0.0.0.0/0, ::/0
+    volumes:
+      - ${PWD}/wg-easy:/etc/wireguard
+      - /lib/modules:/lib/modules:ro
+    ports:
+      - "2948:2948/udp"           # Public VPN port
+      - "56923:56923/tcp" # Web UI bound to localhost for Pangolin
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    sysctls:
+      - net.ipv4.ip_forward=1
+      - net.ipv4.conf.all.src_valid_mark=1
+    security_opt:
+      - no-new-privileges:true
+# NETWORK CONFIGURATION
+networks:
+  vpn_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.0.0.0/24
+          gateway: 10.0.0.1
