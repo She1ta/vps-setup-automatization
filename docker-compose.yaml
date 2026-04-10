@@ -40,11 +40,11 @@ services:
       # Required in v15 for HTTP Web UI access
       - INSECURE=true
       # WG_HOST, WG_PORT, and WG_DEFAULT_DNS are configured in the browser on first launch!
-      
+      #
       # ⚠️ VPN Tunnel IPs (Clients get 10.8.0.2, 10.8.0.3, etc.)
       # This MUST be different from the Docker network (10.0.0.x)
       - WG_DEFAULT_ADDRESS=10.8.0.x
-      
+      #
       # Point clients to AdGuard's new static IP
       - WG_DEFAULT_DNS=10.0.0.100
       #
