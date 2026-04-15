@@ -65,8 +65,8 @@ status_working "Creating User & Hardening SSH"
     chmod 700 /home/"$USER_NAME"/.ssh
     chmod 600 /home/"$USER_NAME"/.ssh/authorized_keys
 
-    SSH_PORT=$(shuf -i 5000-65535 -n 1)
-    SSHD_CONFIG="/etc/ssh/sshd_config"
+    SSH_PORT=$(shuf -i 50000-65535 -n 1)
+    SSHD_CONFIG="/etc/ssh/sshd_config.d/99-vps-hardening.conf"
     cp $SSHD_CONFIG "${SSHD_CONFIG}.bak"
 
     # Setup SSH Banner
