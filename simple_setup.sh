@@ -66,17 +66,20 @@ status_working "Creating User & Hardening SSH"
     chmod 600 /home/"$USER_NAME"/.ssh/authorized_keys
 
     SSH_PORT=$(shuf -i 50000-65535 -n 1)
-    SSHD_CONFIG="/etc/ssh/sshd_config.d/99-vps-hardening.conf"
-    cp $SSHD_CONFIG "${SSHD_CONFIG}.bak"
-
+    
     # Setup SSH Banner
-    echo "veesp" > /etc/ssh/banner
+    echo "Welcome to the Veesp server" > /etc/ssh/banner
 
-    # Strip existing conflicting settings to avoid duplicates
-    sed -i -E '/^(Port|PermitRootLogin|PasswordAuthentication|LogLevel|LoginGraceTime|MaxAuthTries|MaxSessions|PermitEmptyPasswords|KerberosAuthentication|GSSAPIAuthentication|AllowAgentForwarding|AllowTcpForwarding|X11Forwarding|PermitTunnel|Banner)/d' $SSHD_CONFIG
+    # Define the modern drop-in directory and file
+    DROPIN_DIR="/etc/ssh/sshd_config.d"
+    SSHD_CONF_FILE="$DROPIN_DIR/99-vps-hardening.conf"
 
-    # Append DigitalOcean SSH Hardening
-    cat <<EOT >> $SSHD_CONFIG
+    # Ensure the drop-in directory exists
+    mkdir -p "$DROPIN_DIR"
+
+    # Write our strict settings to the drop-in file. 
+    # The '99-' prefix ensures this file loads LAST and overrides everything else.
+    cat <<EOT > "$SSHD_CONF_FILE"
 Port $SSH_PORT
 LogLevel VERBOSE
 LoginGraceTime 20
@@ -95,6 +98,12 @@ Banner /etc/ssh/banner
 KexAlgorithms curve25519-sha256,curve25519-sha256@libssh.org
 Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com
 EOT
+
+    # Safety Check: Ensure the main sshd_config is actually including drop-in files.
+    # (Ubuntu 22.04/24.04 do this by default, but this protects against modified images)
+    if ! grep -q "^Include /etc/ssh/sshd_config.d/\*.conf" /etc/ssh/sshd_config; then
+        sed -i '1i Include /etc/ssh/sshd_config.d/*.conf' /etc/ssh/sshd_config
+    fi
 
     systemctl restart ssh
 } >> "$LOG_FILE" 2>&1 && status_success "SSH Hardened on Port $SSH_PORT" || status_error "SSH Setup Failed"
