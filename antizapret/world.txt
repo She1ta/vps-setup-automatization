@@ -350,6 +350,7 @@ shikimori.one
 framatube.org
 
 # Cloudflare
+cdnjs.com
 a.nel.cloudflare.com
 cloudflare-ech.com
 cloudflare-dns.com
@@ -658,6 +659,7 @@ ovhcloud.com
 contabo.com
 digitalocean.com
 hetzner.com
+cloudfront.net
 hostinger.com
 ionos.com
 kamatera.com
