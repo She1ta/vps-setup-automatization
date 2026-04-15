@@ -187,6 +187,7 @@ x.com
 # Facebook (Meta)
 cdninstagram.com
 instagram.com
+www.instagram.com
 ig.me
 conversionsapigateway.com
 facebook.com
@@ -206,6 +207,16 @@ oculuscdn.com
 oculusvr.com
 viber.com
 vb.me
+web.whatsapp.com
+chat.whatsapp.com
+mmg.whatsapp.net
+g.whatsapp.net
+s.whatsapp.net
+v.whatsapp.net
+pps.whatsapp.net
+cdn.whatsapp.net
+static.whatsapp.net
+scontent.whatsapp.net
 whatsapp.com
 whatsapp.net
 whatsapp.biz
@@ -232,6 +243,146 @@ meetings.googleapis.com
 hangouts.googleapis.com
 meet.google.com
 stream.meet.google.com
+
+# Discord
+updates.discord.com
+cdn.discordapp.com
+media.discordapp.net
+discordapp.io
+stable.dl2.discordapp.net
+discordcdn.com
+discord.app
+gateway.discord.gg
+images-ext-1.discordapp.net
+images-ext-2.discordapp.net
+images-ext-3.discordapp.net
+images-ext-4.discordapp.net
+images-ext-5.discordapp.net
+latency.discord.media
+discord-attachments-uploads-prd.storage.googleapis.community
+discord-attachments-uploads-prd.storage.googleapis.com
+#
+_2087._https.c-fra13-86f45ca9.discord.media
+c-arn02-ecac9ad7.discord.media
+c-arn02-e97ad248.discord.media
+c-arn07-196f4edb.discord.media
+c-arn02-9ba08afe.discord.media
+c-arn02-cb9d6dac.discord.media
+_2053._https.c-arn02-ecac9ad7.discord.media
+_8443._https.c-arn02-e97ad248.discord.media
+_2053._https.c-arn07-196f4edb.discord.media
+_8443._https.c-arn02-9ba08afe.discord.media
+_2083._https.c-arn02-cb9d6dac.discord.media
+_8443._https.c-arn02-9ba08afe.discord.media
+c-fra13-86f45ca9.discord.media
+c-fra13-86f45ca9.discord.media
+#
+discord-activities.com
+discordactivities.com
+discordinvites.net
+discordpartygames.com
+discordsays.com
+discordstatus.com
+dis.gd
+discord.co
+discord.com
+discord.design
+discord.dev
+discord.gg
+discord.gift
+discord.gifts
+discord.media
+discord.new
+discord.store
+discord.tools
+discordapp.com
+discordapp.net
+discordmerch.com
+
+# Anydesk
+support.anydesk.com
+anydesk.com
+
+# Misc
+apkmirror.com
+duckduckgo.com
+wheregoes.com
+rutracker.org
+static.rutracker.cc
+cdn.lottielab.com
+lottielab.com
+nnmclub.to
+nnm-club.me
+nnmstatic.win
+ntc.party
+agrd.eu
+medium.com
+mdns.mcast.net
+aaplimg.com
+adguard-dns.com
+adguard.com
+adguard.info
+adguardcdn.com
+agrd.eu
+adguard-dns.io
+adtidy.org
+mullvad.net
+media.mullvad.net
+ipv4.am.i.mullvad.net
+am.i.mullvad.net
+proton.me
+account.proton.me
+account-api.proton.me
+account-api.protonvpn.com
+protonweb.com
+protonvpn.com
+mail.proton.me
+protonweb.com
+pmecdn.protonweb.com
+prostovpn.org
+nordvpn.com
+nordcdn.com
+totallyacdn.com
+surfshark.com
+expressvpn.com
+amazonaws.com
+shikimori.one
+framatube.org
+
+# Cloudflare
+a.nel.cloudflare.com
+cloudflare-ech.com
+cloudflare-dns.com
+cloudflare-ipfs.com
+cloudflareinsights.com
+embed.cloudflarestream.com
+one.one.one.one
+help.every1dns.net
+cloudflare-esni.com
+cloudflare-gateway.com
+cloudflare-quic.com
+cloudflare.com
+cloudflare.net
+cloudflare.tv
+cloudflareaccess.com
+cloudflareapps.com
+cloudflarebolt.com
+cloudflareclient.com
+cloudflareok.com
+cloudflarepartners.com
+cloudflareportal.com
+cloudflarepreview.com
+cloudflareresolve.com
+cloudflaressl.com
+cloudflarestatus.com
+cloudflarestorage.com
+cloudflarestream.com
+cloudflaretest.com
+cloudflarewarp.com
+encryptedsni.com
+challenges.cloudflare.com
+turn.cloudflare.com
+stun.cloudflare.com
 
 #
 # GitHub / Copilot
@@ -267,7 +418,6 @@ recraft.ai
 reve.art
 sora.com
 sonara.ai
-support.anydesk.com
 trae.ai
 x.ai
 manus.im
@@ -275,7 +425,6 @@ manus.im
 # Telemetry / Analytics / Monitoring
 api.segment.io
 browser-intake-us5.datadoghq.com
-challenges.cloudflare.com
 client.crisp.chat
 http-intake.logs.datadoghq.com
 mailerlite.com
@@ -283,8 +432,6 @@ posthog.com
 sentry.dev
 sentry.io
 statsigapi.net
-turn.cloudflare.com
-stun.cloudflare.com
 
 # Microsoft / Azure / Xbox / Unity
 bing.com
@@ -344,7 +491,7 @@ weather.com
 ru-board.com
 
 #twitch
-ttvnw.net
+usher.ttvnw.net
 
 #video
 netflix.com
@@ -548,16 +695,6 @@ vans.eu
 walmart.com
 amazon.com
 amazon.co.jp
-
-# Discord
-discord-activities.com
-discordactivities.com
-discordinvites.net
-discordpartygames.com
-discordsays.com
-discordstatus.com
-mee6.xyz
-rythm.fm
 
 # CDN
 contentful.com
