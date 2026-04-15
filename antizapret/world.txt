@@ -64,6 +64,7 @@ signaler-pa.youtube.com
 accounts.google.com
 accounts.google.ru
 www.gstatic.com
+gstatic.com
 www.google.com
 www.youtube.com
 youtube.com
@@ -215,6 +216,7 @@ s.whatsapp.net
 v.whatsapp.net
 pps.whatsapp.net
 cdn.whatsapp.net
+dit.whatsapp.net
 static.whatsapp.net
 scontent.whatsapp.net
 whatsapp.com
@@ -496,6 +498,7 @@ usher.ttvnw.net
 
 #video
 netflix.com
+nflximg.com
 nflxso.net
 nflxvideo.net
 
