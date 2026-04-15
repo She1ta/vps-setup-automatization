@@ -83,7 +83,9 @@ video.google.com
 googlevideo.com
 
 # Google Services & APIs
+aida.googleapis.com
 ai.google.dev
+generativeai.google
 aisandbox-pa.googleapis.com
 aistudio.google.com
 alkalicore-pa.clients6.google.com
@@ -91,9 +93,13 @@ alkalimakersuite-pa.clients6.google.com
 alkalimetricsink-pa.clients6.google.com
 android.googleapis.com
 antigravity.google
+antigravity-pa.googleapis.com
+antigravity.googleapis.com
+antigravity-unleash.goog
 apis.google.com
 appcatalyst.pa.googleapis.com
 assistant-s3-pa.googleapis.com
+bard.google.com
 clients4.google.com
 clientservices.googleapis.com
 cloud.google.com
@@ -103,14 +109,20 @@ content-autofill.googleapis.com
 content-people.googleapis.com
 developerprofiles-pa.googleapis.com
 gemini.google.com
+gemini.google
 gemini.com
+deepmind.com
+deepmind.google
+geller-pa.googleapis.com
 generativelanguage.googleapis.com
 idx.google.com
 jules.google.com
+jules.google
 labs.google
 learning.google.com
 lookerstudio.google.com
 monospace-pa.clients6.google.com
+makersuite.google.com
 notebooklm.google
 notebooklm.google.com
 opal.google
@@ -120,6 +132,7 @@ proactivebackend-pa.googleapis.com
 scone-pa.clients6.google.com
 signaler-pa.clients6.google.com
 stitch.withgoogle.com
+speechs3proto2-pa.googleapis.com
 waa-pa.clients6.google.com
 webchannel-alkalimakersuite-pa.clients6.google.com
 subscriptionsfirstparty-pa.googleapis.com
@@ -213,6 +226,12 @@ connectivitycheck.gstatic.com
 android.clients.google.com
 prod-lt-playstoregatewayadapter-pa.googleapis.com
 
+# Google meet
+meetings.clients6.google.com
+meetings.googleapis.com
+hangouts.googleapis.com
+meet.google.com
+stream.meet.google.com
 
 #
 # GitHub / Copilot
