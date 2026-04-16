@@ -8,16 +8,16 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' 
 
-function status_working() { echo -ne "  [ .. ] $1..."; }
-function status_success() { echo -e "\r  [ ${GREEN}SUCCESS${NC} ] $1                                "; }
-function status_error()   { echo -e "\r[  ${RED}FAIL${NC}   ] $1. Check log: $LOG_FILE              "; exit 1; }
+function status_working() { echo -ne " [ .. ] $1..."; }
+function status_success() { echo -e "\r[ ${GREEN}SUCCESS${NC} ] $1 "; }
+function status_error() { echo -e "\r[ ${RED}FAIL${NC} ] $1. Check log: $LOG_FILE "; exit 1; }
 
 [[ -z "$USER_NAME" ]] && { echo -e "${RED}Error: Provide a username (e.g., ./setup.sh admin)${NC}"; exit 1; }
 [[ "$EUID" -ne 0 ]] && { echo -e "${RED}Error: Run as root${NC}"; exit 1; }
 true > "$LOG_FILE"
 
 echo -e "\n${BLUE}==========================================================${NC}"
-echo -e "${BLUE}  SIMPLIFIED VPS DEPLOYMENT (IMPROVED + DKMS AWG) ${NC}"
+echo -e "${BLUE} SIMPLIFIED VPS DEPLOYMENT (MAXIMUM STEALTH + DKMS AWG) ${NC}"
 echo -e "${BLUE}==========================================================${NC}"
 
 status_working "Fixing APT Sources & Upgrading System"
@@ -45,6 +45,7 @@ status_working "Fixing APT Sources & Upgrading System"
         apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install linux-image-amd64 linux-headers-amd64
     fi
 } >> "$LOG_FILE" 2>&1 && status_success "System & Headers Updated" || status_error "System Update Failed"
+
 status_working "Creating User & Hardening SSH"
 {
     USER_PASS=$(openssl rand -base64 16)
@@ -67,9 +68,6 @@ status_working "Creating User & Hardening SSH"
 
     SSH_PORT=$(shuf -i 50000-65535 -n 1)
     
-    # Setup SSH Banner
-    echo "Welcome to the Veesp server" > /etc/ssh/banner
-
     # Define the modern drop-in directory and file
     DROPIN_DIR="/etc/ssh/sshd_config.d"
     SSHD_CONF_FILE="$DROPIN_DIR/99-vps-hardening.conf"
@@ -78,7 +76,6 @@ status_working "Creating User & Hardening SSH"
     mkdir -p "$DROPIN_DIR"
 
     # Write our strict settings to the drop-in file. 
-    # The '99-' prefix ensures this file loads LAST and overrides everything else.
     cat <<EOT > "$SSHD_CONF_FILE"
 Port $SSH_PORT
 LogLevel VERBOSE
@@ -94,32 +91,68 @@ AllowAgentForwarding no
 AllowTcpForwarding no
 X11Forwarding no
 PermitTunnel no
-Banner /etc/ssh/banner
+UseDNS no
+DebianBanner no
 KexAlgorithms curve25519-sha256,curve25519-sha256@libssh.org
 Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com
+MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com
 EOT
 
     # Safety Check: Ensure the main sshd_config is actually including drop-in files.
-    # (Ubuntu 22.04/24.04 do this by default, but this protects against modified images)
     if ! grep -q "^Include /etc/ssh/sshd_config.d/\*.conf" /etc/ssh/sshd_config; then
         sed -i '1i Include /etc/ssh/sshd_config.d/*.conf' /etc/ssh/sshd_config
     fi
 
     systemctl restart ssh
 } >> "$LOG_FILE" 2>&1 && status_success "SSH Hardened on Port $SSH_PORT" || status_error "SSH Setup Failed"
+
 status_working "Configuring Firewall (UFW)"
 {
     export DEBIAN_FRONTEND=noninteractive
     apt-get install -y ufw
+
+    # Disable Ping (ICMP Echo Requests) for IPv4 & IPv6
+    sed -i 's/-A ufw-before-input -p icmp --icmp-type echo-request -j ACCEPT/-A ufw-before-input -p icmp --icmp-type echo-request -j DROP/' /etc/ufw/before.rules
+    sed -i 's/-A ufw6-before-input -p icmpv6 --icmpv6-type echo-request -j ACCEPT/-A ufw6-before-input -p icmpv6 --icmpv6-type echo-request -j DROP/' /etc/ufw/before6.rules
+
     ufw default deny incoming
     ufw default allow outgoing
-    ufw limit $SSH_PORT/tcp
+    
+    # NOTE: SSH Port is intentionally NOT allowed here. fwknop will handle it.
+    # NOTE: 8080 and 3000 removed to hide server. Access them via VPN.
+    
     ufw allow 60000:61000/udp
-    ufw allow 51821/tcp
-    ufw allow 8080/tcp
-    ufw allow 3000/tcp
+    ufw allow 51821/udp
     ufw --force enable
-} >> "$LOG_FILE" 2>&1 && status_success "Firewall Active" || status_error "Firewall Failed"
+} >> "$LOG_FILE" 2>&1 && status_success "Firewall Active (Stealth Mode)" || status_error "Firewall Failed"
+
+status_working "Configuring fwknop (SPA)"
+{
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get install -y fwknop-server fwknop-client
+    
+    # Auto-detect the primary network interface (e.g., eth0, ens3)
+    PUB_IF=$(ip -4 route ls | grep default | grep -Po '(?<=dev )(\S+)' | head -1)
+    
+    # Generate secure cryptographic keys
+    FWKNOP_KEYS=$(fwknop --key-gen)
+    KEY_BASE64=$(echo "$FWKNOP_KEYS" | grep "KEY_BASE64" | cut -d ' ' -f 2)
+    HMAC_KEY_BASE64=$(echo "$FWKNOP_KEYS" | grep "HMAC_KEY_BASE64" | cut -d ' ' -f 2)
+    
+    # Configure fwknopd.conf to listen on the correct interface
+    sed -i "s/^PCAP_INTF.*/PCAP_INTF                   $PUB_IF;/" /etc/fwknop/fwknopd.conf
+    
+    # Configure access.conf with our newly generated keys
+    cat <<EOT > /etc/fwknop/access.conf
+SOURCE              ANY
+KEY_BASE64          $KEY_BASE64
+HMAC_KEY_BASE64     $HMAC_KEY_BASE64
+FW_ACCESS_TIMEOUT   30
+EOT
+
+    systemctl enable fwknop-server
+    systemctl restart fwknop-server
+} >> "$LOG_FILE" 2>&1 && status_success "fwknop (SPA) Configured" || status_error "fwknop Setup Failed"
 
 status_working "Installing AmneziaWG (Wiresock Logic)"
 {
@@ -181,6 +214,7 @@ status_working "Installing AmneziaWG (Wiresock Logic)"
     fi
     modprobe amneziawg || true
 } >> "$LOG_FILE" 2>&1 && status_success "AmneziaWG Installed" || status_error "AmneziaWG Failed"
+
 status_working "Installing Docker"
 {
     export DEBIAN_FRONTEND=noninteractive
@@ -193,17 +227,16 @@ status_working "Finalizing Maintenance & Security"
     export DEBIAN_FRONTEND=noninteractive
     apt-get install -y fail2ban unattended-upgrades git btop haveged
 
-    # Configure Fail2Ban (DigitalOcean Recommendations)
-    # We must set the custom SSH port, otherwise Fail2Ban monitors port 22
+    # Configure Fail2Ban
     cat <<EOT > /etc/fail2ban/jail.local
 [DEFAULT]
-bantime  = 1d
+bantime = 1d
 findtime = 10m
 maxretry = 3
 
 [sshd]
 enabled = true
-port    = $SSH_PORT
+port = $SSH_PORT
 logpath = %(sshd_log)s
 backend = %(sshd_backend)s
 EOT
@@ -211,7 +244,7 @@ EOT
     systemctl enable fail2ban
     systemctl restart fail2ban
 
-    # Terminal Colors Setup (Cyan User, Yellow Directory)
+    # Terminal Colors Setup
     BASHRC_SNIPPET="
 alias ll='ls -alF --color=auto'
 alias update='sudo apt update && sudo apt upgrade -y'
@@ -223,15 +256,23 @@ export PS1='\[\e[1;36m\]\u@\h\[\e[m\]:\[\e[1;33m\]\w\[\e[m\]\$ '
     ROOT_PASS=$(openssl rand -base64 16)
     echo "root:$ROOT_PASS" | chpasswd
 } >> "$LOG_FILE" 2>&1 && status_success "Maintenance & Security Configured" || status_error "Maintenance Config Failed"
+
 clear
 echo -e "\n${BLUE}==========================================================${NC}"
-echo -e "${GREEN}  VPS DEPLOYED SUCCESSFULLY ${NC}"
+echo -e "${GREEN} VPS DEPLOYED SUCCESSFULLY (STEALTH MODE ACTIVE) ${NC}"
 echo -e "${BLUE}==========================================================${NC}"
-echo -e "  SSH Port:      ${YELLOW}$SSH_PORT${NC}"
-echo -e "  Admin User:    ${YELLOW}$USER_NAME${NC}"
-echo -e "  Admin Pass:    ${YELLOW}$USER_PASS${NC}"
-echo -e "  Root Password: ${YELLOW}$ROOT_PASS${NC}"
-echo -e "\n${YELLOW}SAVE THIS PRIVATE KEY TO YOUR PC AS vps.key:${NC}"
+echo -e " SSH Port: ${YELLOW}$SSH_PORT${NC}"
+echo -e " Admin User: ${YELLOW}$USER_NAME${NC}"
+echo -e " Admin Pass: ${YELLOW}$USER_PASS${NC}"
+echo -e " Root Password: ${YELLOW}$ROOT_PASS${NC}"
+
+echo -e "\n${RED}==========================================================${NC}"
+echo -e "${RED} CRITICAL: SAVE THESE FWKNOP KEYS TO ACCESS SSH! ${NC}"
+echo -e "${RED}==========================================================${NC}"
+echo -e "KEY_BASE64:      ${YELLOW}${KEY_BASE64}${NC}"
+echo -e "HMAC_KEY_BASE64: ${YELLOW}${HMAC_KEY_BASE64}${NC}"
+
+echo -e "\n${YELLOW}SAVE THIS PRIVATE SSH KEY TO YOUR PC AS vps.key:${NC}"
 echo -e "${BLUE}----------------------------------------------------------${NC}"
 echo "$PRIVATE_KEY"
 echo -e "${BLUE}----------------------------------------------------------${NC}"
