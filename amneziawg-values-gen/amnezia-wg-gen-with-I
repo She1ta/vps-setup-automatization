@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AmneziaWG 2.0 Ultimate Config Generator</title>
+    <style>
+        :root {
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --accent-green: #10b981;
+            --border: #334155;
+        }
+        * { box-sizing: border-box; }
+        body { 
+            font-family: system-ui, -apple-system, sans-serif; 
+            background: var(--bg-main); color: var(--text-main); 
+            padding: 2rem; max-width: 1200px; margin: auto; line-height: 1.5;
+        }
+        h1 { margin-top: 0; font-size: 1.75rem; color: var(--accent); }
+        h3 { margin-top: 0; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; font-size: 1.1rem; }
+        
+        /* Grid transitions dynamically based on state */
+        .layout-grid { 
+            display: grid; 
+            grid-template-columns: 1fr; /* 1 column by default */
+            gap: 2rem; 
+            align-items: start; 
+            transition: all 0.3s ease;
+        }
+        .layout-grid.show-advanced {
+            grid-template-columns: 1.2fr 0.8fr; /* 2 columns when advanced is visible */
+        }
+        @media(max-width: 900px) { .layout-grid.show-advanced { grid-template-columns: 1fr; } }
+        
+        .card { background: var(--bg-card); padding: 1.5rem; border-radius: 0.75rem; border: 1px solid var(--border); margin-bottom: 1.5rem; }
+        .controls-card { display: flex; flex-direction: column; gap: 1rem; }
+        
+        .row { display: flex; gap: 1rem; margin-bottom: 1rem; }
+        .col { flex: 1; }
+        label { display: block; margin-bottom: 0.25rem; font-size: 0.85rem; color: var(--text-muted); font-weight: 600; }
+        input, select { 
+            width: 100%; padding: 0.5rem; border-radius: 0.35rem; 
+            border: 1px solid var(--border); background: var(--bg-main); 
+            color: var(--text-main); font-family: monospace; font-size: 0.95rem;
+        }
+        input:focus, select:focus { outline: 2px solid var(--accent); border-color: transparent; }
+        .signature-input { margin-bottom: 0.5rem; font-size: 0.85rem; }
+        
+        button { 
+            cursor: pointer; padding: 0.6rem 1.2rem; background: var(--accent); 
+            color: white; border: none; border-radius: 0.35rem; font-weight: 600; 
+            transition: 0.2s; font-size: 0.9rem;
+        }
+        button:hover { background: var(--accent-hover); }
+        .btn-outline { background: transparent; border: 1px solid var(--accent); color: var(--accent); width: 100%; margin-top: 0.5rem; }
+        .btn-outline:hover { background: var(--accent); color: white; }
+        
+        /* New styling for the Randomize Button */
+        .btn-primary { 
+            background: var(--accent-green); 
+            font-size: 1rem; 
+            padding: 0.75rem 1.5rem; 
+            display: inline-block; 
+            width: auto; 
+        }
+        .btn-primary:hover { background: #059669; }
+        
+        textarea { 
+            width: 100%; height: 500px; padding: 1rem; border-radius: 0.35rem; 
+            border: 1px solid var(--border); background: #020617; color: #38bdf8; 
+            font-family: monospace; font-size: 1.05rem; resize: vertical; white-space: pre;
+        }
+        .help-text { font-size: 0.8rem; color: var(--text-muted); margin-top: -0.5rem; margin-bottom: 1rem; display: block; }
+
+        /* Hide advanced settings by default */
+        #advanced-settings { display: none; }
+    </style>
+</head>
+<body>
+
+    <h1>AmneziaWG 2.0 Ultimate Parameter Generator</h1>
+    <p style="color: var(--text-muted); margin-bottom: 2rem;">Offline generator supporting full AWG 2.0 specifications. Mimic legitimate traffic to easily bypass Deep Packet Inspection.</p>
+
+    <!-- QUICK CONTROLS (ALWAYS VISIBLE) -->
+    <div class="card controls-card" style="border-color: var(--accent);">
+        <div>
+            <label>Signature Preset (CPS)</label>
+            <select id="preset-selector" onchange="applyPreset()">
+                <option value="dynamic">Random Dynamic CPS (High Entropy)</option>
+                <option value="dns">Official Amnezia DNS Mimic</option>
+                <option value="quic">Official Amnezia QUIC Mimic</option>
+                <option value="custom">Custom (Paste your own in Advanced)</option>
+            </select>
+        </div>
+
+        <button class="btn-outline" id="toggle-btn" onclick="toggleAdvanced()">⚙️ Show Advanced Settings</button>
+    </div>
+
+    <!-- THE RANDOMIZE BUTTON -->
+    <div style="margin-bottom: 1.5rem;">
+        <button class="btn-primary" onclick="generateAll()">🔄 Randomize Values & Signatures</button>
+    </div>
+
+    <!-- MAIN WORKSPACE -->
+    <div class="layout-grid" id="main-workspace">
+        
+        <!-- LEFT COLUMN: ADVANCED SETTINGS (HIDDEN BY DEFAULT) -->
+        <div id="advanced-settings">
+            
+            <!-- CUSTOM PROTOCOL SIGNATURES (I1 - I5) -->
+            <div class="card">
+                <h3 style="color: var(--accent);">Signature Chain (I1 - I5)</h3>
+                <span class="help-text">Manual entry for Custom Protocol Signatures. Uses <code>&lt;b 0x...&gt;</code> for hex data and <code>&lt;r size&gt;</code> for random bytes.</span>
+                
+                <label>I1 (Primary Handshake Trigger)</label>
+                <input type="text" id="i1" class="signature-input" placeholder="e.g. <r 2><b 0x85800001...">
+                <label>I2</label>
+                <input type="text" id="i2" class="signature-input">
+                <label>I3</label>
+                <input type="text" id="i3" class="signature-input">
+                <label>I4</label>
+                <input type="text" id="i4" class="signature-input">
+                <label>I5</label>
+                <input type="text" id="i5" class="signature-input">
+                
+                <button class="btn-outline" onclick="forceDynamicCPS()">🎲 Randomize Signatures Only</button>
+            </div>
+
+            <!-- JUNK PACKETS -->
+            <div class="card">
+                <h3>Junk Packets (Jc, Jmin, Jmax)</h3>
+                <span class="help-text">Fires immediately after I-packets to blur the timing and size profile of the session start.</span>
+                <div class="row">
+                    <div class="col"><label>Jc (3 - 10)</label><input type="number" id="jc"></div>
+                    <div class="col"><label>Jmin (Bytes)</label><input type="number" id="jmin"></div>
+                    <div class="col"><label>Jmax (Bytes)</label><input type="number" id="jmax"></div>
+                </div>
+                <button class="btn-outline" onclick="genJ()">Randomize Junk Packets</button>
+            </div>
+
+            <!-- OBFUSCATION OFFSETS -->
+            <div class="card">
+                <h3>Obfuscation Offsets (S1 - S4)</h3>
+                <span class="help-text">Modifies packet sizes. Strictly avoids the WireGuard 56-byte collision.</span>
+                <div class="row">
+                    <div class="col"><label>S1</label><input type="number" id="s1"></div>
+                    <div class="col"><label>S2</label><input type="number" id="s2"></div>
+                </div>
+                <div class="row">
+                    <div class="col"><label>S3</label><input type="number" id="s3"></div>
+                    <div class="col"><label>S4</label><input type="number" id="s4"></div>
+                </div>
+                <button class="btn-outline" onclick="genS()">Randomize S1 - S4</button>
+            </div>
+
+            <!-- RANGED HEADERS -->
+            <div class="card">
+                <h3>Ranged Headers (H1 - H4)</h3>
+                <span class="help-text">Non-overlapping ranges to randomize packet header magic values.</span>
+                <div class="row">
+                    <div class="col"><label>H1</label><input type="text" id="h1"></div>
+                    <div class="col"><label>H2</label><input type="text" id="h2"></div>
+                </div>
+                <div class="row">
+                    <div class="col"><label>H3</label><input type="text" id="h3"></div>
+                    <div class="col"><label>H4</label><input type="text" id="h4"></div>
+                </div>
+                <button class="btn-outline" onclick="genH()">Randomize Ranged Headers</button>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: OUTPUT -->
+        <div style="position: sticky; top: 2rem;">
+            <div class="card">
+                <h3>Generated Configuration</h3>
+                <p class="help-text">Paste these lines into the <code>[Interface]</code> block of your AmneziaWG server and client configs.</p>
+                <textarea id="output" readonly></textarea>
+                <button style="width: 100%; margin-top: 1rem;" onclick="copyOutput(event)">📋 Copy to Clipboard</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const signaturesDB = {
+            "dns": {
+                i1: "<r 2><b 0x8580000100010000000004796162730679616e6465780272750000010001c00c000100010000026d000457fa27d1>",
+                i2: "", i3: "", i4: "", i5: ""
+            },
+            "quic": {
+                i1: "<b 0xd10000000108c10f0131a077e7f01087>", 
+                i2: "", i3: "", i4: "", i5: ""
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            generateAll();
+            // Switch to Custom if user manually types in the advanced inputs
+            document.querySelectorAll('input').forEach(input => input.addEventListener('input', () => {
+                if(input.id.startsWith('i')) {
+                    document.getElementById('preset-selector').value = 'custom';
+                }
+                updateOutput();
+            }));
+        });
+
+        function toggleAdvanced() {
+            const advSettings = document.getElementById('advanced-settings');
+            const workspace = document.getElementById('main-workspace');
+            const toggleBtn = document.getElementById('toggle-btn');
+
+            if (advSettings.style.display === 'none' || advSettings.style.display === '') {
+                advSettings.style.display = 'block';
+                workspace.classList.add('show-advanced');
+                toggleBtn.innerHTML = '⚙️ Hide Advanced Settings';
+            } else {
+                advSettings.style.display = 'none';
+                workspace.classList.remove('show-advanced');
+                toggleBtn.innerHTML = '⚙️ Show Advanced Settings';
+            }
+        }
+
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function randomHex(bytes) {
+            const arr = new Uint8Array(bytes);
+            window.crypto.getRandomValues(arr);
+            return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        function genDynamicCPS() {
+            for (let i = 1; i <= 5; i++) {
+                if (i > 2 && Math.random() > 0.6) {
+                    document.getElementById(`i${i}`).value = "";
+                    continue;
+                }
+                const r1 = `<r ${getRandomInt(1, 8)}>`;
+                const b1 = `<b 0x${randomHex(getRandomInt(4, 32))}>`;
+                const r2 = `<r ${getRandomInt(10, 150)}>`;
+                const formats =[ `${r1}${b1}`, `${b1}${r2}`, `${r1}${b1}${r2}` ];
+                document.getElementById(`i${i}`).value = formats[getRandomInt(0, formats.length - 1)];
+            }
+        }
+
+        // Dedicated button inside advanced settings to force randomizing ONLY signatures
+        function forceDynamicCPS() {
+            document.getElementById('preset-selector').value = 'dynamic';
+            genDynamicCPS();
+            updateOutput();
+        }
+
+        function applyPreset() {
+            const preset = document.getElementById('preset-selector').value;
+            
+            if (preset === 'dynamic') {
+                genDynamicCPS();
+            } else if (preset === 'custom') {
+                // Do nothing to the I1-I5 fields. Leave user's text alone.
+            } else {
+                // Apply static Amnezia payloads (DNS / QUIC)
+                const data = signaturesDB[preset];
+                for (let i = 1; i <= 5; i++) {
+                    document.getElementById(`i${i}`).value = data[`i${i}`];
+                }
+            }
+            updateOutput();
+        }
+
+        function genJ() {
+            document.getElementById('jc').value = getRandomInt(3, 10);
+            document.getElementById('jmin').value = 50;
+            document.getElementById('jmax').value = 1000;
+            updateOutput();
+        }
+
+        function genS() {
+            let s1, s2, s3, s4;
+            do { s1 = getRandomInt(15, 150); s2 = getRandomInt(15, 150); } while (Math.abs(s1 - s2) === 56);
+            do { s3 = getRandomInt(15, 150); s4 = getRandomInt(15, 150); } while (Math.abs(s3 - s4) === 56);
+            
+            document.getElementById('s1').value = s1; document.getElementById('s2').value = s2;
+            document.getElementById('s3').value = s3; document.getElementById('s4').value = s4;
+            updateOutput();
+        }
+
+        function genH() {
+            const RANGE = 100000000;
+            const MIN = 5; const MAX = 2147483647;
+            const SEG = Math.floor((MAX - MIN) / 4);
+
+            let h1_s = MIN + getRandomInt(0, SEG - RANGE);
+            let h2_s = MIN + SEG + getRandomInt(0, SEG - RANGE);
+            let h3_s = MIN + (SEG * 2) + getRandomInt(0, SEG - RANGE);
+            let h4_s = MIN + (SEG * 3) + getRandomInt(0, SEG - RANGE);
+
+            document.getElementById('h1').value = `${h1_s}-${h1_s + RANGE - 1}`;
+            document.getElementById('h2').value = `${h2_s}-${h2_s + RANGE - 1}`;
+            document.getElementById('h3').value = `${h3_s}-${h3_s + RANGE - 1}`;
+            document.getElementById('h4').value = `${h4_s}-${h4_s + RANGE - 1}`;
+            updateOutput();
+        }
+
+        function generateAll() {
+            // Randomize all the base numbers
+            genJ(); 
+            genS(); 
+            genH(); 
+            
+            // Respect the currently selected preset instead of forcing it to 'dynamic'
+            applyPreset(); 
+        }
+
+        function updateOutput() {
+            let out = '';
+            const standardFields =['jc', 'jmin', 'jmax', 's1', 's2', 's3', 's4', 'h1', 'h2', 'h3', 'h4'];
+            standardFields.forEach(f => {
+                out += `${f.charAt(0).toUpperCase() + f.slice(1)} = ${document.getElementById(f).value}\n`;
+            });
+            
+            out += '\n';
+
+            for (let i = 1; i <= 5; i++) {
+                const val = document.getElementById(`i${i}`).value.trim();
+                if (val) {
+                    out += `I${i} = ${val}\n`;
+                }
+            }
+            document.getElementById('output').value = out;
+        }
+
+        function copyOutput(event) {
+            const out = document.getElementById('output');
+            out.select();
+            document.execCommand('copy');
+            
+            const btn = event.target;
+            const originalText = btn.innerText;
+            btn.innerText = "✅ Config Copied!";
+            btn.style.background = "#059669";
+            setTimeout(() => {
+                btn.innerText = originalText;
+                btn.style.background = "var(--accent)";
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
