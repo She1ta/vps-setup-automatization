@@ -140,8 +140,10 @@ status_working "Configuring fwknop (SPA)"
     HMAC_KEY_BASE64=$(echo "$FWKNOP_KEYS" | grep "HMAC_KEY_BASE64" | cut -d ' ' -f 2)
     
     # Configure fwknopd.conf to listen on the correct interface
-    sed -i "s/^PCAP_INTF.*/PCAP_INTF                   $PUB_IF;/" /etc/fwknop/fwknopd.conf
-    
+    sed -i "s/^[# \t]*PCAP_INTF.*/PCAP_INTF                   $PUB_IF;/" /etc/fwknop/fwknopd.conf
+    #echo "PCAP_INTF                   $PUB_IF;" >> /etc/fwknop/fwknopd.conf
+
+    # Alternatively, replace the sed command entirely with an echo append, which is much safer:
     # Configure access.conf with our newly generated keys
     cat <<EOT > /etc/fwknop/access.conf
 SOURCE              ANY
