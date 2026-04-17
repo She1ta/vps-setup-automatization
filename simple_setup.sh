@@ -136,8 +136,8 @@ status_working "Configuring fwknop (SPA)"
     
     # Generate secure cryptographic keys
     FWKNOP_KEYS=$(fwknop --key-gen)
-    KEY_BASE64=$(echo "$FWKNOP_KEYS" | grep "KEY_BASE64" | cut -d ' ' -f 2)
-    HMAC_KEY_BASE64=$(echo "$FWKNOP_KEYS" | grep "HMAC_KEY_BASE64" | cut -d ' ' -f 2)
+    KEY_BASE64=$(echo "$FWKNOP_KEYS" | grep "^KEY_BASE64" | awk '{print $2}')
+    HMAC_KEY_BASE64=$(echo "$FWKNOP_KEYS" | grep "^HMAC_KEY_BASE64" | awk '{print $2}')
     
     # Configure fwknopd.conf to listen on the correct interface
     #sed -i "s/^[# \t]*PCAP_INTF.*/PCAP_INTF                   $PUB_IF;/" /etc/fwknop/fwknopd.conf
