@@ -102,7 +102,10 @@ EOT
     if ! grep -q "^Include /etc/ssh/sshd_config.d/\*.conf" /etc/ssh/sshd_config; then
         sed -i '1i Include /etc/ssh/sshd_config.d/*.conf' /etc/ssh/sshd_config
     fi
-
+    #
+    systemctl disable --now ssh.socket
+    systemctl enable --now ssh.service
+    #
     systemctl restart ssh
 } >> "$LOG_FILE" 2>&1 && status_success "SSH Hardened on Port $SSH_PORT" || status_error "SSH Setup Failed"
 
@@ -123,6 +126,7 @@ status_working "Configuring Firewall (UFW)"
     
     ufw allow 60000:61000/udp
     ufw allow 51821/udp
+    ufw allow 62201/udp
     ufw --force enable
 } >> "$LOG_FILE" 2>&1 && status_success "Firewall Active (Stealth Mode)" || status_error "Firewall Failed"
 
