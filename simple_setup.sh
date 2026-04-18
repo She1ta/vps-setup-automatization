@@ -264,24 +264,41 @@ export PS1='\[\e[1;36m\]\u@\h\[\e[m\]:\[\e[1;33m\]\w\[\e[m\]\$ '
 } >> "$LOG_FILE" 2>&1 && status_success "Maintenance & Security Configured" || status_error "Maintenance Config Failed"
 
 clear
+# Get the public IP of the server dynamically
+SERVER_IP=$(curl -sS ifconfig.me || curl -sS icanhazip.com || echo "YOUR_SERVER_IP")
+
 echo -e "\n${BLUE}==========================================================${NC}"
-echo -e "${GREEN} VPS DEPLOYED SUCCESSFULLY (STEALTH MODE ACTIVE) ${NC}"
+echo -e "${GREEN}      VPS DEPLOYED SUCCESSFULLY (STEALTH MODE ACTIVE)     ${NC}"
 echo -e "${BLUE}==========================================================${NC}"
-echo -e " SSH Port: ${YELLOW}$SSH_PORT${NC}"
 echo -e " Admin User: ${YELLOW}$USER_NAME${NC}"
 echo -e " Admin Pass: ${YELLOW}$USER_PASS${NC}"
 echo -e " Root Password: ${YELLOW}$ROOT_PASS${NC}"
 
-echo -e "\n${RED}==========================================================${NC}"
-echo -e "${RED} CRITICAL: SAVE THESE FWKNOP KEYS TO ACCESS SSH! ${NC}"
-echo -e "${RED}==========================================================${NC}"
-echo -e "KEY_BASE64:      ${YELLOW}${KEY_BASE64}${NC}"
-echo -e "HMAC_KEY_BASE64: ${YELLOW}${HMAC_KEY_BASE64}${NC}"
-
-echo -e "\n${YELLOW}SAVE THIS PRIVATE SSH KEY TO YOUR PC AS vps.key:${NC}"
+echo -e "\n${RED}[STEP 1] SAVE THIS PRIVATE SSH KEY TO YOUR PC AS vps_key:${NC}"
 echo -e "${BLUE}----------------------------------------------------------${NC}"
 echo "$PRIVATE_KEY"
 echo -e "${BLUE}----------------------------------------------------------${NC}"
-echo -e "\n${RED}REBOOTING IN 5 SECONDS TO APPLY CHANGES...${NC}"
+
+echo -e "\n${YELLOW}[STEP 2] Copy this exact block and paste it into your local PC's ~/.fwknoprc file:${NC}"
+echo -e "${BLUE}----------------------------------------------------------${NC}"
+cat <<EOT
+[myvps]
+SPA_SERVER          $SERVER_IP
+ACCESS              tcp/$SSH_PORT
+KEY_BASE64          $KEY_BASE64
+HMAC_KEY_BASE64     $HMAC_KEY_BASE64
+USE_HMAC            Y
+ALLOW_IP            source
+EOT
+echo -e "${BLUE}----------------------------------------------------------${NC}"
+
+echo -e "\n${GREEN}[STEP 3] How to connect from your PC:${NC}"
+echo -e "1. Knock on the firewall:"
+echo -e "   ${YELLOW}fwknop -n myvps${NC}"
+echo -e "2. Within 30 seconds, connect via SSH:"
+echo -e "   ${YELLOW}ssh -i ~/.ssh/vps_key -p $SSH_PORT $USER_NAME@$SERVER_IP${NC}"
+echo -e "${BLUE}==========================================================${NC}\n"
+
+echo -e "${RED}REBOOTING IN 10 SECONDS TO APPLY CHANGES...${NC}"
 sleep 5
 reboot
