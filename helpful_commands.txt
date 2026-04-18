@@ -1,0 +1,63 @@
+# # # # #
+Install latest kernel on ubuntu 22.04:
+Simply install the HWE metapackage for your LTS release of Ubuntu: sudo apt install linux-generic-hwe-22.04
+#
+Optional: Remove the original GA metapackage: sudo apt remove linux-image-generic
+# # # # #
+Alias for commands:
+If we want to create an alias for the 'cd Desktop' command (which is to move into Desktop directory using cd command), you can use:
+alias CD="cd Desktop"
+#
+How to Remove an Alias?
+The removing an existing alias is known as unaliasing. It following is the syntax of it.
+Syntax:
+unalias [alias name]
+#
+# Source: https://www.geeksforgeeks.org/linux-unix/alias-command-in-linux-with-examples/
+#
+# # # # #
+Install beta version wg-easy:
+docker pull ghcr.io/wg-easy/wg-easy:15.3.0-beta.2
+#
+# # # # #
+Install Docker Engine:
+
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+#
+# # # # #
+Restart ssh and daemons:
+sudo systemctl daemon-reload
+sudo systemctl restart ssh.socket
+#
+# # # # #
+Check ssh service:
+systemctl status ssh.service
+#
+You can also run ss -tulpn | grep sshd to see exactly which port it is finally listening on
+#
+# # # # #
+Install fwknop:
+#
+sudo apt install fwknop-client
+# # # # #
+fwknop structure:
+[myvps]
+SPA_SERVER          <YOUR_SERVER_IP>
+ACCESS              tcp/<YOUR_SSH_PORT>
+KEY_BASE64          <YOUR_KEY_BASE64>
+HMAC_KEY_BASE64     <YOUR_HMAC_KEY_BASE64>
+USE_HMAC            Y
+ALLOW_IP            source
+# # # # #
+fwknop connect:
+#
+fwknop -n myvps
+ssh -i ~/.ssh/vps_key -p <YOUR_RANDOM_PORT> admin@<YOUR_SERVER_IP>
+# # # # #
+Alias:
+alias sshvps="fwknop -n myvps && sleep 1 && ssh -i /path/to/your/private_key -p <YOUR_SSH_PORT> admin@<YOUR_SERVER_IP>"
+#
+Now, whenever you want to access your server, you just type:
+sshvps
+# # # # #
