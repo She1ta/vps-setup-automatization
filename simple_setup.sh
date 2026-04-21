@@ -224,9 +224,7 @@ status_working "Installing AmneziaWG (Wiresock Logic)"
 status_working "Installing Docker"
 {
     export DEBIAN_FRONTEND=noninteractive
-    #curl -sSL https://get.docker.com | sh
-    curl -fsSL https://get.docker.com -o get-docker.sh
-    sh get-docker.sh
+    curl -sSL https://get.docker.com | sh
     usermod -aG docker "$USER_NAME"
 } >> "$LOG_FILE" 2>&1 && status_success "Docker Installed" || status_error "Docker Failed"
 
